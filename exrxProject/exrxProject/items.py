@@ -7,8 +7,18 @@ from scrapy.item import Item, Field
 
 class ExrxItem(Item):
     # define the fields for your item here like:
-    exerciseCategory = Field()
-    #muscleGroup = Field()
-    #title = Field()
-    #link = Field()
-    #desc = Field()
+    title = Field()
+    link = Field()
+
+class ExrxCategory(Item):
+    # define the fields for your item here like:
+    title = Field()
+    link = Field()
+
+class ExrxExercise(Item):
+    # define the fields for your item here like:
+    preparation = Field()
+    execution = Field()
+    link = Field()
+    title = Field()
+
