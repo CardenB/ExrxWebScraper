@@ -4,7 +4,6 @@ from exrxProject.items import ExrxItem, ExrxCategory, ExrxExercise
 from scrapy.http import Request
 import re
 
-
 #TO OUTPUT TO JSON RUN THIS COMMAND
 #run in dir: exrxScraper/exrxProject
 #scrapy crawl exrx -o items.json -t json 
@@ -30,48 +29,46 @@ class exrxScraperSpider(Spider):
         exerciseItems.append(item)
         yield item 
 
+    def getEquipmentName(self, sel):
+        count = 0
+        parentName = sel.xpath('../text()').extract()
+        return sel.xpath('.//ancestor::*[contains(text(), "Barbell")]').extract()
+
     def parseCategory(self, response):
         sel = Selector(response)
         sites = sel.xpath('//ul/li/a')
         for sel in sites:
-            item = ExrxCategory()
-            link = sel.xpath('./@href').extract()
+            validLinks = sel.xpath('./@href[contains(., "WeightExercises") \
+                            or contains(., "Plyometrics") \
+                            or contains(., "Stretches")]')
+            links = validLinks.extract()
+            link = ''
+            title = ''
 
-            titleList = sel.xpath('./text()').extract()
+
+            titleList = validLinks.xpath('./text()').extract()
             if titleList == []:
                 titleList = sel.xpath('./i/text()').extract()
-            newTitleList = [re.sub(r'\r\n\s*', ' ', title) for title in titleList]
-
-            equipmentDict = {}
-
-            item['title'] = newTitleList
-            item['link'] = link
-            """
-            for s in link:
-                print s
-                print response.url
-                req = Request(response.url + "/" + s, callback=self.parseExercise)
-                yield req
-            """
-            yield item 
+            newTitleList = [re.sub(r'\r\n\s*', ' ', title).replace('\n', ' ').replace('\r', ' ') for title in titleList]
+            for s in newTitleList:
+                title = s
+            for s in links:
+                link = 'www.exrx.net/' + s.replace('../../','' )
+                
+            if (not (link == '')) and (not (title == '')):
+                item = ExrxCategory()
+                item['link'] = link
+                item['title'] = title
+                yield item 
 
     def parse(self, response):
-
         sel = Selector(response)
         exercises = sel.xpath('//h2[contains(text(), "Exercises")]')
-        print exercises
-        print exercises.xpath('./text()').extract()
         sites = exercises.xpath('./..//ul//li')
         items = []
-        print sites
         for sel in sites:
-            item = ExrxItem()
             link = sel.xpath('./a/@href').extract()
-            item['title'] = sel.xpath('a/text()').extract()
-            item['link'] = link
             for s in link:
                 req = Request('http://www.exrx.net/Lists/' + s, callback=self.parseCategory)
                 yield req
-            items.append(item)
-            #yield item
 
